@@ -2065,6 +2065,7 @@ body.welcome-active {
   margin: 0;
   font-size: 24px;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -5047,17 +5048,26 @@ function updateLikesInFirestore(count, isLiked) {
     const timestamp = new Date().toISOString();
     const likeChange = isLiked ? 1 : -1;
     
-    fsSet('stats', 'global', { totalLikes: fsIncrement(likeChange), lastUpdated: timestamp }).catch(function(err) {
+    // Update global like count with atomic increment
+    fsDoc('stats', 'global').update({
+      totalLikes: fsIncrement(likeChange),
+      lastUpdated: timestamp
+    }).catch(function(err) {
       if (err.code === 'permission-denied') {
         console.log('?? Like count not saved - Firestore rules need updating');
+      } else {
+        console.log('?? Error updating likes:', err.message);
       }
     });
+    
+    // Update user's like status
     fsSet('likes', userId, { liked: isLiked, timestamp: timestamp }).catch(function(err) {
       if (err.code === 'permission-denied') {
         console.log('?? Like status not saved - update Firestore rules');
       }
     });
     
+    // Update user profile if logged in
     if (firebase.auth().currentUser?.uid) {
       const uid = firebase.auth().currentUser.uid;
       const repChange = isLiked ? 5 : -5;
@@ -5187,7 +5197,7 @@ function updateMessagesInFirestore(count) {
 
   <div class="welcome-messages-container">
     <div class="messages-badge">
-      <span class="messages-icon">??</span>
+      <span class="messages-icon">💬</span>
       <span class="messages-count" id="messagesCount">0</span>
     </div>
     <span class="messages-label">Messages</span>
@@ -5195,7 +5205,7 @@ function updateMessagesInFirestore(count) {
 
   <div class="welcome-like-container">
     <button class="welcome-like-btn" id="welcomeLikeBtn" onclick="toggleWelcomeLike()">
-      <span class="like-icon">??</span>
+      <span class="like-icon">❤️</span>
       <span class="like-count" id="welcomeLikeCount">0</span>
     </button>
     <div class="like-tooltip" id="likeTooltip">Thanks for the love!</div>
@@ -5203,8 +5213,6 @@ function updateMessagesInFirestore(count) {
   </div>
 
   <div class="welcome-content">
-    </div>
-
     <h1 class="welcome-title">Scholar AI</h1>
     <p class="welcome-tagline">
       Your <span>Educational AI Assistant</span>
@@ -5215,15 +5223,15 @@ function updateMessagesInFirestore(count) {
 
     <div class="welcome-features">
       <div class="welcome-feature-item">
-        <span class="welcome-feature-icon">?</span>
+        <span class="welcome-feature-icon">📚</span>
         <span class="welcome-feature-text"><strong>Knowledge Base</strong>Articles, images &amp; metadata</span>
       </div>
       <div class="welcome-feature-item">
-        <span class="welcome-feature-icon">?</span>
+        <span class="welcome-feature-icon">🛠️</span>
         <span class="welcome-feature-text"><strong>Smart Tools</strong>Calculator, weather, converter &amp; more</span>
       </div>
       <div class="welcome-feature-item">
-        <span class="welcome-feature-icon">?</span>
+        <span class="welcome-feature-icon">🎤</span>
         <span class="welcome-feature-text"><strong>Interactive</strong>Voice input, TTS &amp; live browser</span>
       </div>
     </div>
@@ -5246,18 +5254,19 @@ function updateMessagesInFirestore(count) {
     </button>
     <p class="welcome-credit">Developed by <strong>SAAD KHAN</strong></p>
   </div>
+  </div>
 </div>
 
 <!-- Main App Container -->
 <div class="app-container">
 <header class="header">
   <div class="header-left">
-    <button class="btn-icon" onclick="toggleSidebar()" title="Toggle Sidebar">?</button>
+    <button class="btn-icon" onclick="toggleSidebar()" title="Toggle Sidebar">☰</button>
 
   </div>
   <div class="header-right">
-    <button class="btn-icon" onclick="openSettings()" title="Settings & Preferences">??</button>
-    <button class="btn-icon" onclick="showHelp()" title="Help & Documentation">?</button>
+    <button class="btn-icon" onclick="openSettings()" title="Settings & Preferences">⚙️</button>
+    <button class="btn-icon" onclick="showHelp()" title="Help & Documentation">❓</button>
 
     <button class="profile-btn" id="profileBtn" onclick="toggleProfile()" title="User Profile">U</button>
   </div>
@@ -5266,7 +5275,7 @@ function updateMessagesInFirestore(count) {
   <div class="profile-overlay" id="profileOverlay" onclick="closeProfile()"></div>
   <div class="profile-modal" id="profileModal">
     <div class="profile-header">
-      <button class="profile-close" onclick="closeProfile()">?</button>
+      <button class="profile-close" onclick="closeProfile()">✕</button>
       <div class="profile-avatar" id="profileAvatar">U</div>
       <div class="profile-name" id="profileName">User</div>
       <div class="profile-status">Premium Member</div>
